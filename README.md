@@ -1,10 +1,6 @@
-# Social Media Login Service
+# 3rd Party API and CRUD Operations
 
 - GitHub Repo can be found here: [https://github.com/bpyle02/sweng-861-week-3-3rd-party-api-and-crud-operations](https://github.com/bpyle02/sweng-861-week-3-3rd-party-api-and-crud-operations)
-
-# Authentication Flow Diagram
-
-![diagram-export-1-26-2025-4_59_32-PM.png](diagram-export-1-26-2025-4_59_32-PM.png)
 
 # Setting up the Environment
 
@@ -14,354 +10,148 @@
 - To run this web app locally, clone the repository and run `npm i` in the frontend and backend folders
 - After the frontend and backend are initialized, you can start up the backend by typing `npm start` in the terminal and the frontend by executing the `npm run dev` command
 - You will then be able to access the website from [http://localhost:5173](http://localhost:5173). Right now, the website only has functionality to sign in, sign out, and edit your profile, but if you would like to see the fully built application, you can check out [https://christisking.info](https://christisking.info)
+- You can also view the API documentation, built with Swagger UI, [http://localhost:3173/api-docs](here)
 
-# Setting up MongoDB
+# 3rd Party API Implementation
 
-- Instead of setting up a local instance of MongoDB, I decided to go with their free cloud tier
-- To set it up, create an account at https://cloud.mongodb.com/, create a new project and create a database within that project
-- Next, go to ‘Secutity’ → ‘Quickstart’ and create a database user
-- Then, go to ‘Security’ → ‘Network Access’ → ‘Add IP Address’ and click ‘Allow Access From Anywhere’. Although this isn’t recommended for production environments, it is an easy way to get up and running without having to worry about getting the correct IP (since they often change)
-- Now go to ‘Deployment’ → ‘Database’ → ‘Driver’ and make sure Node.js is selected. Copy the connection string and paste it into the DB_LOCATION variable inside the backend .env file
-- Your database is all set and ready to go now!
+- For the first requirement of using a 3rd party API, I decided to use [https://ui-avatars.com](UI-Avatars). This is a super simple and easy API library that allows new users, when the sign up on my website, to receive an auto-generated profile image with their initials on it and a random background color.
+- The implementation of this application is very simple. In fact, it only requires one line of code inside the `server.post("/users")` route of the `server.js` file:
+```
+    let profile_img = "https://ui-avatars.com/api/?name=" + fullname.replace(" ", "+") + "&background=random&size=384";
+```
+- In my application, the Users schema stores only the URL of the profile image. That makes this API super useful, because they provide a dead-simple approach to get a profile image based on the user's `fullname`. All I have to do is replace the spaces with '+' signs and boom, a custom profile image!
 
-# Setting up Firebase
+# CRUD Operations
 
-- Navigate to https://console.firebase.google.com/u/0/, sign in, and click ‘Create an project’
-    - Make sure to disable AI assistance and analytics
-- Next, click on the ‘Web’ icon under ‘Get started by adding Firebase to your app
-- Register your app, copy the code it gives you, and paste it into ./frontend/common/firebase.jsx
-- Now, go back to the main page of your firebase project and click on ‘Authentication’ → ‘Add new provider’ → ‘Google’
-- Enable it, add your email, and click save
-- Now go to ‘Project settings’ → ‘Service accounts’ and click on ‘Generate new private key’
-- Copy the contents of the file and paste it into ./backend/etc/secrets/firebase_private_key.json
+- So far, for this website, I have developed 9 different API routes that correspond to the four CRUD operations
+  - Create
+    - `server.post("/users")` -- This api route is used to create new users (that use email and password) via the sign up page
+    - `server.post("/google-auth")` -- This api route is used to create new users (that use Google Authentication) via the sign up/in pages
+    - `server.post("/facebook-auth")` -- This api route is used to create new users (that use Facebook Authentication) via the sign up/in pages
+  - Read
+    - `server.get("/users/:username")` -- This api route returns a user object for the specified user without any sensitive information such as password, auth tokens, etc.
+  - Update
+    - `server.put("/users/:id")` -- This api route is used to update user data such as bio, username, or social media links (and profile images in the future will be modifiable as well)
+    - `server.post("users/:id")` -- This api route is used to update the user's password
+  - Delete
+    - `server.delete("/users/:id")` -- This api route is used to delete the user 
+- In order to provide a simple way to access full API documentation, I used a tool called Swagger UI, which can be accessed by running the application and navigating to [http://localhost:3173](http://localhost:3173/api-docs).
+  - To implement Swagger UI on the server side, I used the code below
+```
+    import swaggerUi from 'swagger-ui-express';
 
-# Setting up Google Sign In
+    const options = {
+        definition: {
+            openapi: '3.0.0',
+            info: {
+                title: 'API Documentation',
+                version: '1.0.0',
+                description: 'API for managing user authentication and profile data',
+            },
+            servers: [
+                {
+                    url: `http://localhost:3173`,
+                },
+            ],
+        },
+        apis: ['./routes/book.js'],
+    };
+    const swaggerSpec = swaggerJsdoc(options);
 
-- Go back to your firebase.jsx app and add the following code
-    
-    ```jsx
-    import { GoogleAuthProvider, FacebookAuthProvider, getAuth, signInWithPopup } from 'firebase/auth'
-    
-    // Google Authentication
-    const google_provider = new GoogleAuthProvider();
-    const google_auth = getAuth();
-    
-    export const authWithGoogle = async () => {
-    
-        let user = null;
-    
-        await signInWithPopup(google_auth, google_provider)
-        .then((result) => {
-            user = result.user
-        })
-        .catch((err) => {
-            console.log(err)
-        })
-    
-        return user;
-    }
-    
-    ```
-    
-    - This is what allows the popup window to appear and Google Authentication to work when you click on the ‘Sign in with Google’ button
-- Now, add the following function to the ‘userAuthForm.jsx’ file
-    
-    ```jsx
-    //Add this function near the top of the file
-    const handleGoogleAuth = (e) => {
-    
-        e.preventDefault();
-    
-        authWithGoogle().then(user => {
-            
-            let se rverRoute = "/google-auth";
-    
-            let formData = {
-                access_token: user.accessToken
-            }
-    
-            userAuthThroughServer(serverRoute, formData)
-    
-        })
-        .catch(err => {
-            toast.error('trouble login through google');
-            return console.log(err)
-        })
-    
-    }
-    
-    //Add this HTML code below the standard sign in text input boxes
-    <button className="btn-dark flex items-center justify-center gap-4 w-[90%] center" onClick={handleGoogleAuth} >
-        <img src={googleIcon} className="w-5" />
-        continue with google
-    </button>
-    ```
-    
-- Next you’ll need to add a google-auth boolean variable to your User.js schema in order to check which method the user used to sign in. Add it right after the ‘account_info’ variable
-    
-    ```jsx
-    google_auth: {
-        type: Boolean,
-        default: false
-    },
-    ```
-    
-- Finally, you will make 2 edits to your server.js file
-    - First, add the following code to your /signin route to make sure users cannot use the standard login method if they already created their account using either Google or Facebook sign in
-        
-        ```jsx
-        if(!user.google_auth || !user.facebook_auth){
-        
-            bcrypt.compare(password, user.personal_info.password, (err, result) => {
-        
-                if(err) {
-                    return res.status(403).json({ "error": "Error occured while login please try again" });
-                }
-        
-                if(!result){
-                    return res.status(403).json({ "error": "Incorrect password" })
-                } else{
-                    return res.status(200).json(formatDatatoSend(user))
-                }
-        
-            })
-        
-        } else {
-            return res.status(403).json({ "error": "Account was created using an oauth provider. Try logging in with with Facebook or Google." })
+    server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+```
+  - Swagger UI uses the `book.js` file found in `/backend/routes/book.js` to define the API routes and documentation. Here is an example of one route defined in this file:
+```
+    /**
+    * @swagger
+    * /users:
+    *   post:
+    *     summary: Create a new user account with email and password
+    *     description: Allows a new user to sign up with email and password.
+    *     requestBody:
+    *       required: true
+    *       content:
+    *         application/json:
+    *           schema:
+    *             type: object
+    *             properties:
+    *               fullname:
+    *                 type: string
+    *               email:
+    *                 type: string
+    *                 format: email
+    *               password:
+    *                 type: string
+    *                 format: password
+    *     responses:
+    *       '200':
+    *         description: User created successfully
+    *         content:
+    *           application/json:
+    *             schema:
+    *               type: object
+    *               properties:
+    *                 access_token:
+    *                   type: string
+    *                 profile_img:
+    *                   type: string
+    *                   format: url
+    *                 username:
+    *                   type: string
+    *                 fullname:
+    *                   type: string
+    *                 isAdmin:
+    *                   type: boolean
+    *       '403':
+    *         description: Validation error
+    *       '500':
+    *         description: Server error or email already exists
+    */
+```
+
+# API Security
+- Authorization Protection
+  - In order to make sure only authorized users can access or modify data, only users with a valid authorization token can use the APIs
+  - For example, the following axios `put` command to modify user data must have an `Authorization` header value. If there is no valid access token, then an error will be thrown and the user will not be able to modify any data. This is true for all API routes.
+```
+    axios.put(
+        import.meta.env.VITE_SERVER_DOMAIN + "/users/" + jwt_data.id,
+        updateData, {
+        headers: {
+            'Authorization': `Bearer ${access_token}`
         }
-        ```
-        
-    - Next, paste the following post request function into your server.js file in order to enable Google authentication in the backend. This function will also save the user data to the database
-        
-        ```jsx
-        server.post("/google-auth", async (req, res) => {
-        
-            let { access_token } = req.body;
-        
-            getAuth()
-            .verifyIdToken(access_token)
-            .then(async (decodedUser) => {
-        
-                let { email, name, picture } = decodedUser;
-                let isAdmin = false;
-                
-                if (process.env.ADMIN_EMAILS.split(",").includes(email)) {
-                    isAdmin = true;
-                }
-        
-                picture = picture.replace("s96-c", "s384-c");
-        
-                let user = await User.findOne({"personal_info.email": email}).select("personal_info.fullname personal_info.username personal_info.profile_img admin google_auth facebook_auth").then((u) => {
-                    return u || null
-                })
-                .catch(err => {
-                    return res.status(500).json({ "error": err.message })
-                })
-        
-                if(user) { // login
-                    if(!user.google_auth){
-                        return res.status(403).json({ "error": "This email was signed up without google. Please log in with password to access the account" })
-                    }
-                }
-                else { // sign up
-                    
-                    let username = await generateUsername(email);
-        
-                    user = new User({
-                        personal_info: { fullname: name, email, username, profile_img: picture },
-                        admin: isAdmin,
-                        google_auth: true,
-                        facebook_auth: false
-                    })
-        
-                    await user.save().then((u) => {
-                        user = u;
-                    })
-                    .catch(err => {
-                        return res.status(500).json({ "error": err.message })
-                    })
-        
-                }
-        
-                console.log("You successfully signed in with Google!")
-                return res.status(200).json(formatDatatoSend(user))
-        
-            })
-            .catch(err => {
-                return res.status(500).json({ "error": "Failed to authenticate you with google. Try with some other google account" })
-            })
-        
-        })
-        ```
-        
-
-# Setting up Facebook Sign In
-
-- Unfortunately, Facebook sign in only works for my account because you have to have a business account for it to work in production. However, I will still explain how to set it up.
-- First, go back to the main page of your firebase project and click on ‘Authentication’ → ‘Add new provider’ → ‘Facebook’ and copy the ‘Callback URL’
-- Then, go to [https://developers.facebook.com](https://developers.facebook.com) and create and app
-- Select ‘Authenticate and request data from users for Facebook Login’ as the app use case
-- Don’t add a business account unless you have one you want to use and then click ‘Go to dashboard’
-- Next, click on ‘Customize adding a Facebook Login button’ from the dashboard page and add the email permission
-- From the Facebook Login sidebar menu, click on ‘Settings’ and paste in the ‘Callback URL’ you copied from Firebase into the ‘Redirect URI to Check’ box and save
-- Now go down to ‘Quickstart’ on the sidebar and click on ‘Web’
-- In the ‘Site URL’ input box, paste in [http://localhost](http://localhost) if you are testing or the domain you are using if the site is in  production
-- Now it’s time to do some coding! First, paste the code below into the ‘firebase.jsx’ file
-    
-    ```jsx
-    // Facebook Authentication
-    const facebook_provider = new FacebookAuthProvider();
-    const facebook_auth = getAuth();
-    
-    export const authWithFacebook = async () => {
-    
-        let user = null;
-    
-        await signInWithPopup(facebook_auth, facebook_provider)
-        .then((result) => {
-            user = result.user
-        })
-        .catch((err) => {
-            console.log(err)
-        })
-    
-        return user;
-    }
-    ```
-    
-- Now, add the following function to the ‘userAuthForm.jsx’ file
-    
-    ```jsx
-    //Add this function to the top of the file
-    const handleFacebookAuth = (e) => {
-    
-        e.preventDefault();
-    
-        authWithFacebook().then(user => {
-            
-            let serverRoute = "/facebook-auth";
-    
-            let formData = {
-                access_token: user.accessToken
-            }
-    
-            userAuthThroughServer(serverRoute, formData)
-    
-        })
-        .catch(err => {
-            toast.error('trouble login through facebook');
-            return console.log(err)
-        })
-    
-    }
-    
-    //Add this HTML code below the standard sign in text input boxes
-    <button className="btn-dark flex items-center justify-center gap-4 w-[90%] center mt-2" onClick={handleFacebookAuth}>
-        <img src={facebookIcon} className="w-5" />
-        continue with facebook
-    </button>
-    ```
-    
-- Next you’ll need to add a facebook-auth boolean variable to your User.js schema in order to check which method the user used to sign in. Add it right after the ‘account_info’ variable
-    
-    ```jsx
-    facebook_auth: {
-        type: Boolean,
-        default: false
-    },
-    ```
-    
-- Next, paste the following post request function into your server.js file in order to enable Facebook authentication in the backend. This function will also save the user data to the database
-    
-    ```jsx
-    server.post("/facebook-auth", async (req, res) => {
-    
-        let { access_token } = req.body;
-        
-        
-        getAuth()
-        .verifyIdToken(access_token)
-        .then(async (decodedUser) => {
-            
-            let { email, name, picture } = decodedUser;
-            let isAdmin = false;
-            
-            if (process.env.ADMIN_EMAILS.split(",").includes(email)) {
-                isAdmin = true;
-            }
-    
-            let user = await User.findOne({"personal_info.email": email}).select("personal_info.fullname personal_info.username personal_info.profile_img admin google_auth facebook_auth").then((u) => {
-                return u || null
-            })
-            .catch(err => {
-                return res.status(500).json({ "error": err.message })
-            })
-    
-            if(user) { // login
-                if(!user.facebook_auth){
-                    return res.status(403).json({ "error": "This email was signed up without facebook. Please log in with password to access the account" })
-                }
-            }
-            else { // sign up
-                
-                let username = await generateUsername(email);
-    
-                user = new User({
-                    personal_info: { fullname: name, email, username, profile_img: picture },
-                    admin: isAdmin,
-                    google_auth: false,
-                    facebook_auth: true
-                })
-    
-                await user.save().then((u) => {
-                    user = u;
-                })
-                .catch(err => {
-                    return res.status(500).json({ "error": err.message })
-                })
-    
-            }
-    
-            console.log("You successfully signed in with Facebook!")
-            return res.status(200).json(formatDatatoSend(user))
-    
-        })
-        .catch(err => {
-            return res.status(500).json({ "error": "Failed to authenticate you with facebook. Try with some other google account" })
-        })
-    
     })
-    ```
-    
+```
+- Rate Limiting
+  - In addition to implementing API security measures, I have also implemented rate limiting to prevent malicious attackers from scraping data. This prevents people from abusing the APIs.
+  - There are currently 2 different rate limits depending on the API route:
+    - 100 requests per IP per 15 minutes -- this is the standard rate limit used for get requests like getting user data or editing user data
+    - 5 requests per 30 minutes -- this is the standard rate limit used for user creation and deletion
+  - The code to implement this is fairly straightforward and can be seen in full in the `server.js` file:
+```
+    import rateLimit from 'express-rate-limit';
 
-# Error Handling
+    const server = express();
 
-- For error handling, a combination of console logs for more advanced error handling and Toast for user-facing popup notifications
-- `console.log` example:
-    
-    ```jsx
-    //In this example, if a user attempts to log in with Facebook using an email
-    //that was already used to sign using another method, the function will return
-    //a 403 (forbidden) error and explain the issue in a json format 
-    if(!user.facebook_auth){
-        return res.status(403).json({ "error": "This email was signed up without facebook. Please log in with password to access the account" })
-    }
-    ```
-    
-- If this situation occurs, the frontend will generate an error popup using toast and output the full error message to the console:
-    
-    ```jsx
-    //If any errors occur while logging in with Facebook, this message will pop up
-    //and the full error will be output to the console
-    .catch(err => {
-        toast.error('Trouble logging in through Facebook');
-        return console.log(err)
-    })
-    ```
-    
+    const standard_limiter = rateLimit({
+        windowMs: 15 * 60 * 1000, // 1000ms in a second * 60 seconds in a minute * 15 = 15 minutes in milliseconds
+        max: 100 // limit each IP to 100 requests per windowMs
+    });
+    const edit_account_limiter = rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 100 // limit each IP to 100 requests per windowMs
+    });
+    const new_account_limiter = rateLimit({
+        windowMs: 30 * 60 * 1000, // 30 minutes
+        max: 5 // limit each IP to 5 requests per windowMs
+    });
+    const delete_account_limiter = rateLimit({
+        windowMs: 30 * 60 * 1000, // 30 minutes
+        max: 5 // limit each IP to 5 requests per windowMs
+    });
 
-# Security Considerations and Measures
-
-- For security, I am using cloud-based storage solutions for user authentication (Firebase) and storage (MongoDB) these inherently have much better security than a custom-made self-hosted solution.
-- Users that sign in with Google and Facebook do not share any password data to the website’s database. That means that, even if someone did get access to the database, the would only be able to access the user’s name, email, and profile picture.
-- Additionally, if a user does sign in with an email and username, bcrypt (a password hashing library) is used to hash all passwords before storing them in the database.
+    server.use(standard_limiter);
+    server.use(edit_account_limiter);
+    server.use(new_account_limiter);
+    server.use(delete_account_limiter);
+```

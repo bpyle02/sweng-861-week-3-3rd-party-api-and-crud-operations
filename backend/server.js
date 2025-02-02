@@ -11,6 +11,7 @@ import { getAuth } from "firebase-admin/auth";
 import User from './Schema/User.js';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import rateLimit from 'express-rate-limit';
 
 const server = express();
 
@@ -40,6 +41,24 @@ const options = {
 };
 const swaggerSpec = swaggerJsdoc(options);
 
+
+const standard_limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 1000ms in a second * 60 seconds in a minute * 15 = 15 minutes in milliseconds
+    max: 100 // limit each IP to 100 requests per windowMs
+});
+const edit_account_limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100 // limit each IP to 100 requests per windowMs
+});
+const new_account_limiter = rateLimit({
+    windowMs: 30 * 60 * 1000, // 30 minutes
+    max: 5 // limit each IP to 5 requests per windowMs
+});
+const delete_account_limiter = rateLimit({
+    windowMs: 30 * 60 * 1000, // 30 minutes
+    max: 5 // limit each IP to 5 requests per windowMs
+});
+
 server.use(express.json());
 server.use(cors(
     {
@@ -51,6 +70,11 @@ server.use(cors(
     }
 ))
 server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+server.use(standard_limiter);
+server.use(edit_account_limiter);
+server.use(new_account_limiter);
+server.use(delete_account_limiter);
+
 
 mongoose.connect((process.env.DB_LOCATION), {
     autoIndex: true
@@ -103,7 +127,8 @@ const generateUsername = async (email) => {
 
 }
 
-server.post("/users", async (req, res) => {
+// Create New User
+server.post("/users", new_account_limiter, async (req, res) => {
     let { fullname, email, password } = req.body;
     let isAdmin = process.env.ADMIN_EMAILS.split(",").includes(email);
 
@@ -149,7 +174,8 @@ server.post("/users", async (req, res) => {
     });
 });
 
-server.post("/users/login", (req, res) => {
+// Log In Existing User
+server.post("/users/login", standard_limiter, (req, res) => {
 
     let { email, password } = req.body;
 
@@ -189,7 +215,7 @@ server.post("/users/login", (req, res) => {
 
 })
 
-server.post("/google-auth", async (req, res) => {
+server.post("/google-auth", new_account_limiter, async (req, res) => {
 
     let { access_token } = req.body;
 
@@ -249,7 +275,7 @@ server.post("/google-auth", async (req, res) => {
 
 })
 
-server.post("/facebook-auth", async (req, res) => {
+server.post("/facebook-auth", new_account_limiter, async (req, res) => {
 
     let { access_token } = req.body;
     
@@ -309,7 +335,7 @@ server.post("/facebook-auth", async (req, res) => {
 })
 
 // Get User Data
-server.get("/users/:username", (req, res) => {
+server.get("/users/:username", standard_limiter, (req, res) => {
     User.findOne({ "personal_info.username": req.params.username })
     .select("-personal_info.password -google_auth -facebook_auth -updatedAt -posts -admin")
     .then(user => {
@@ -322,7 +348,7 @@ server.get("/users/:username", (req, res) => {
 });
 
 // Edit User
-server.put("/users/:id", verifyJWT, (req, res) => {
+server.put("/users/:id", verifyJWT, edit_account_limiter, (req, res) => {
     const updateData = {
         "personal_info.username": req.body.username,
         "personal_info.bio": req.body.bio,
@@ -347,7 +373,7 @@ server.put("/users/:id", verifyJWT, (req, res) => {
     });
 });
 
-server.post("/users/:id", verifyJWT, (req, res) => {
+server.post("/users/:id", verifyJWT, edit_account_limiter, (req, res) => {
 
     let { currentPassword, newPassword } = req.body; 
 
@@ -393,7 +419,7 @@ server.post("/users/:id", verifyJWT, (req, res) => {
 })
 
 // Delete User
-server.delete("/users/:id", verifyJWT, (req, res) => {
+server.delete("/users/:id", verifyJWT, delete_account_limiter, (req, res) => {
     if (req.user !== req.params.id) return res.status(403).json({ error: "Forbidden" });
 
     User.findByIdAndDelete(req.params.id)
