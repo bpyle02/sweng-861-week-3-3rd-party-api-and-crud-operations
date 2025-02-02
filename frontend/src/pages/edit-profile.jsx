@@ -7,6 +7,7 @@ import Loader from "../components/loader";
 import toast, { Toaster } from "react-hot-toast";
 import InputBox from "../components/input";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from 'jwt-decode'
 
 const EditProfile = () => {
 
@@ -27,10 +28,12 @@ const EditProfile = () => {
     const profileData = profile ? profile : profileDataStructure; // Default structure if profile is null
     let { personal_info: { fullname, username: profile_username, profile_img, email, bio }, social_links } = profileData;
 
+    const jwt_data = jwtDecode(access_token);
+
     useEffect(() => {
 
         if(access_token){
-            axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-profile", { username: userAuth.username })
+            axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/users/" + userAuth.username)
             .then(({ data }) => {
                 setProfile(data);
                 setLoading(false);
@@ -57,15 +60,26 @@ const EditProfile = () => {
 
     const handleImageUpload = (e) => {
         e.preventDefault();
+
+        const maxSize = 2 * 1024 * 1024;
     
         if (updatedProfileImg) {
+            console.log(updatedProfileImg)
+            console.log(profileImgEle.current.src)
+
             let loadingToast = toast.loading("Uploading...");
+
+            if (updatedProfileImg.size > maxSize) {
+                toast.dismiss()
+                return toast.error("File size exceeds 2MB. Please select a smaller image.")
+            }
+
             e.target.setAttribute("disabled", true);
     
             const formData = new FormData();
-            formData.append('profile_img', updatedProfileImg); // Assuming 'profile_img' is the field name on the backend
+            formData.append('profile_img', updatedProfileImg);
     
-            axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/update-profile-img", formData, {
+            axios.put(import.meta.env.VITE_SERVER_DOMAIN + "/users/" + jwt_data.id, formData, {
                 headers: { 
                     'Content-Type': 'multipart/form-data',
                     'Authorization': `Bearer ${access_token}`
@@ -101,47 +115,65 @@ const EditProfile = () => {
             formData[key] = value;
         }
 
-        let { username, bio, youtube, facebook, twitter, github, instagram, website } = formData;
-
-        if(username.length < 3){
+        if(formData.username.length < 3){
             return toast.error("Username should be al least 3 characters long")
         }
-        if(bio.length > bioLimit){
+        if(formData.bio.length > bioLimit){
             return toast.error(`Bio should not be more than ${bioLimit} characters`)
         }
+
+        const updateData = {
+            username: formData.username, // Explicitly use formData.username
+            bio: formData.bio,
+            social_links: {
+                youtube: formData.youtube,
+                facebook: formData.facebook,
+                twitter: formData.twitter,
+                github: formData.github,
+                instagram: formData.instagram,
+                website: formData.website
+            }
+        };
+
+        console.log("frontend data:", updateData)
 
         let loadingToast = toast.loading("Updating...");
         e.target.setAttribute("disabled", true);
 
-        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/update-profile", {
-            username, bio, 
-            social_links: { youtube, facebook, twitter, github, instagram, website }
-        }, {
+        axios.put(
+            import.meta.env.VITE_SERVER_DOMAIN + "/users/" + jwt_data.id,
+            updateData, {
             headers: {
                 'Authorization': `Bearer ${access_token}`
             }
         })
         .then(({ data }) => {
+            console.log("Server response:", data.updatedUser);
+            
+            let new_data = data.updatedUser
 
-            if(userAuth.username != data.username){
-
-                let newUserAuth = { ...userAuth, username: data.username };
-                
+            if (userAuth.username !== data.username){
+                let newUserAuth = { 
+                    ...userAuth, 
+                    username: new_data.personal_info.username,
+                    // bio: new_data.personal_info.bio,
+                    // social_links: new_data.personal_info.social_links
+                };
                 sessionStorage.setItem("user", JSON.stringify(newUserAuth));
                 setUserAuth(newUserAuth);
-
             }
-
+            
             toast.dismiss(loadingToast);
             e.target.removeAttribute("disabled");
             toast.success("Profile Updated")
 
         })
-        .catch(({ response }) => {
+        .catch((error) => {
+            console.error("Update error:", error);
             toast.dismiss(loadingToast);
             e.target.removeAttribute("disabled");
-            toast.error(response.data.error)
-        })
+            toast.error(error.response?.data?.error || "Failed to update profile");
+        });
 
     }
 
@@ -156,7 +188,7 @@ const EditProfile = () => {
         try {
             const loadingToast = toast.loading('Deleting account...');
     
-            const response = await axios.delete(import.meta.env.VITE_SERVER_DOMAIN + '/delete-user', {
+            const response = await axios.delete(import.meta.env.VITE_SERVER_DOMAIN + '/users/' + jwt_data.id, {
                 headers: {
                     'Authorization': `Bearer ${access_token}`
                 }

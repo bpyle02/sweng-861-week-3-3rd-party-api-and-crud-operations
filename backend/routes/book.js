@@ -1,8 +1,8 @@
 /**
  * @swagger
- * /signup:
+ * /users:
  *   post:
- *     summary: Create a new user account
+ *     summary: Create a new user account with email and password
  *     description: Allows a new user to sign up with email and password.
  *     requestBody:
  *       required: true
@@ -31,6 +31,7 @@
  *                   type: string
  *                 profile_img:
  *                   type: string
+ *                   format: url
  *                 username:
  *                   type: string
  *                 fullname:
@@ -45,7 +46,7 @@
 
 /**
  * @swagger
- * /signin:
+ * /users/login:
  *   post:
  *     summary: Log in using email and password
  *     description: Authenticate a user with email and password credentials.
@@ -133,7 +134,7 @@
 
 /**
  * @swagger
- * /change-password:
+ * /users/:id:
  *   post:
  *     summary: Change user's password
  *     description: Requires JWT authentication to change the password.
@@ -163,19 +164,10 @@
 
 /**
  * @swagger
- * /get-profile:
- *   post:
+ * /users/:username:
+ *   get:
  *     summary: Retrieve user profile
  *     description: Get user profile by username
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               username:
- *                 type: string
  *     responses:
  *       '200':
  *         description: Profile retrieved successfully
@@ -216,39 +208,16 @@
  *                       type: number
  *                     total_reads:
  *                       type: number
+ *       '404':
+ *         description: User not found
  *       '500':
  *         description: Server error
  */
 
 /**
  * @swagger
- * /update-profile-img:
- *   post:
- *     summary: Update user profile image
- *     description: Update the profile image URL for authenticated users.
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               url:
- *                 type: string
- *                 format: uri
- *     responses:
- *       '200':
- *         description: Profile image updated successfully
- *       '500':
- *         description: Server error
- */
-
-/**
- * @swagger
- * /update-profile:
- *   post:
+ * /users/:id:
+ *   put:
  *     summary: Update user profile information
  *     description: Update username, bio, and social links for authenticated users.
  *     security:
@@ -279,7 +248,7 @@
 
 /**
  * @swagger
- * /delete-user:
+ * /users/:id:
  *   delete:
  *     summary: Delete user account
  *     description: Delete the account of the authenticated user.

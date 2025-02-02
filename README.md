@@ -1,6 +1,6 @@
 # Social Media Login Service
 
-- GitHub Repo can be found here: [https://github.com/bpyle02/sweng-861-week-2-social-media-login-service](https://github.com/bpyle02/sweng-861-week-2-social-media-login-service)
+- GitHub Repo can be found here: [https://github.com/bpyle02/sweng-861-week-3-3rd-party-api-and-crud-operations](https://github.com/bpyle02/sweng-861-week-3-3rd-party-api-and-crud-operations)
 
 # Authentication Flow Diagram
 

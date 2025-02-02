@@ -32,12 +32,11 @@ const UserAuthForm = ({ type }) => {
 
         e.preventDefault();
 
-        let serverRoute = type == "sign-in" ? "/signin" : "/signup";
+        let serverRoute = type == "sign-in" ? "/users/login" : "/users";
 
         let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/; // regex for email
         let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/; // regex for password
 
-        // formData
         let form = new FormData(formElement);
         let formData = {};
 
@@ -46,8 +45,6 @@ const UserAuthForm = ({ type }) => {
         }
 
         let { fullname, email, password } = formData;
-
-        // form validation
 
         if(fullname){
             if(fullname.length < 3){

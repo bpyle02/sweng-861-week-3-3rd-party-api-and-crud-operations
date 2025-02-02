@@ -56,8 +56,6 @@ mongoose.connect((process.env.DB_LOCATION), {
     autoIndex: true
 })
 
-
-
 const verifyJWT = (req, res, next) => {
     
     const authHeader = req.headers['authorization'];
@@ -105,49 +103,27 @@ const generateUsername = async (email) => {
 
 }
 
-server.post("/signup", (req, res) => {
-
+server.post("/users", async (req, res) => {
     let { fullname, email, password } = req.body;
-    let isAdmin = false;
+    let isAdmin = process.env.ADMIN_EMAILS.split(",").includes(email);
 
-    if (process.env.ADMIN_EMAILS.split(",").includes(email)) {
-        isAdmin = true;
+    // validating the data from frontend
+    if (fullname.length < 3){
+            return res.status(403).json({ "error": "Fullname must be at least 3 letters long" })
+    }
+    if (!email.length){
+            return res.status(403).json({ "error": "Enter Email" })
+    }
+    if (!emailRegex.test(email)){
+            return res.status(403).json({ "error": "Email is invalid" })
+    }
+    if (!passwordRegex.test(password)){
+            return res.status(403).json({ "error": "Password should be 6 to 20 characters long with a numeric, 1 lowercase and 1 uppercase letters" })
     }
 
-   // validating the data from frontend
-   if (fullname.length < 3){
-        return res.status(403).json({ "error": "Fullname must be at least 3 letters long" })
-   }
-   if (!email.length){
-        return res.status(403).json({ "error": "Enter Email" })
-   }
-   if (!emailRegex.test(email)){
-        return res.status(403).json({ "error": "Email is invalid" })
-   }
-   if (!passwordRegex.test(password)){
-        return res.status(403).json({ "error": "Password should be 6 to 20 characters long with a numeric, 1 lowercase and 1 uppercase letters" })
-   }
-
-   bcrypt.hash(password, 10, async (err, hashed_password) => {
-
+    bcrypt.hash(password, 10, async (err, hashed_password) => {
         let username = await generateUsername(email);
-        let profile_img;
-
-        try {
-            let encodedName = fullname.replace(/\s/g, '+');
-            // let profile_img_url = `https://ui-avatars.com/api/?name=${encodedName}&background=random&size=384`;
-            let profile_img_url = 'about:blank'
-            console.log(profile_img_url)
-            let response = await fetch(profile_img_url);
-
-            console.log(response.url)
-            
-            profile_img = response.url;
-
-        } catch (error) {
-            console.error('Failed to fetch avatar:', error);
-            profile_img = "https://cloud.brandonpyle.com/s/JySYcKTSp8tLfCQ/download/default_profile.png";
-        }
+        let profile_img = "https://ui-avatars.com/api/?name=" + fullname.replace(" ", "+") + "&background=random&size=384";
 
         let user = new User({
             personal_info: {
@@ -155,35 +131,25 @@ server.post("/signup", (req, res) => {
                 email,
                 password: hashed_password,
                 username,
-                profile_img: profile_img
+                profile_img
             },
             admin: isAdmin,
             google_auth: false,
             facebook_auth: false
-        })
+        });
 
-        console.log('User object before save:', user.toObject()); // Use toObject() to see the actual object structure
-        
         user.save().then((u) => {
-            
-            return res.status(200).json(formatDatatoSend(u))
-            
-        })
-        .catch(err => {
-            
+            res.status(201).json(formatDatatoSend(u));
+        }).catch(err => {
             if(err.code == 11000) {
                 return res.status(500).json({ "error": "Email already exists" })
             }
-            
             return res.status(500).json({ "error": err.message })
-        })
-        
-        console.log('User saved successfully:', user.toObject());
-   })
+        });
+    });
+});
 
-})
-
-server.post("/signin", (req, res) => {
+server.post("/users/login", (req, res) => {
 
     let { email, password } = req.body;
 
@@ -342,7 +308,46 @@ server.post("/facebook-auth", async (req, res) => {
 
 })
 
-server.post("/change-password", verifyJWT, (req, res) => {
+// Get User Data
+server.get("/users/:username", (req, res) => {
+    User.findOne({ "personal_info.username": req.params.username })
+    .select("-personal_info.password -google_auth -facebook_auth -updatedAt -posts -admin")
+    .then(user => {
+        if (!user) return res.status(404).json({ error: "User not found" });
+        res.status(200).json(user);
+    })
+    .catch(err => {
+        res.status(500).json({ error: err.message })
+    });
+});
+
+// Edit User
+server.put("/users/:id", verifyJWT, (req, res) => {
+    const updateData = {
+        "personal_info.username": req.body.username,
+        "personal_info.bio": req.body.bio,
+        "social_links": req.body.social_links
+    };
+
+    if (req.user !== req.params.id) return res.status(403).json({ error: "Forbidden" });
+
+    User.findOneAndUpdate({ _id: req.params.id }, updateData, { new: true, runValidators: true })
+    .then(updatedUser => {
+        if (!updatedUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        res.status(200).json({ updatedUser });
+    })
+    .catch(err => {
+        console.log(err)
+        if(err.code == 11000) {
+            return res.status(409).json({ error: "Username already taken" })
+        }
+        res.status(500).json({ error: err.message });
+    });
+});
+
+server.post("/users/:id", verifyJWT, (req, res) => {
 
     let { currentPassword, newPassword } = req.body; 
 
@@ -370,7 +375,7 @@ server.post("/change-password", verifyJWT, (req, res) => {
 
                 User.findOneAndUpdate({ _id: req.user }, { "personal_info.password": hashed_password })
                 .then((u) => {
-                    return res.status(200).json({ status: 'password changed successfully' })
+                    return res.status(200).json({ status: 'password changed' })
                 })
                 .catch(err => {
                     return res.status(500).json({ error: 'Some error occured while saving new password, please try again later' })
@@ -387,105 +392,22 @@ server.post("/change-password", verifyJWT, (req, res) => {
 
 })
 
-server.post("/get-profile", (req, res) => {
+// Delete User
+server.delete("/users/:id", verifyJWT, (req, res) => {
+    if (req.user !== req.params.id) return res.status(403).json({ error: "Forbidden" });
 
-    let { username } = req.body;
-
-    User.findOne({ "personal_info.username": username })
-    .select("-personal_info.password -google_auth -facebook_auth -updatedAt -posts -admin")
-    .then(user => {
-        return res.status(200).json(user)
-    })
-    .catch(err => {
-        console.log(err);
-        return res.status(500).json({ error: err.message })
-    })
-
-})
-
-server.post("/update-profile-img", verifyJWT, (req, res) => {
-
-    let { url } = req.body;
-
-    User.findOneAndUpdate({ _id: req.user }, { "personal_info.profile_img": url })
-    .then(() => {
-        return res.status(200).json({ status: "Profile image updated successfully" })
-    })
-    .catch(err => {
-        return res.status(500).json({ error: err.message })
-    })
-
-})
-
-server.post("/update-profile", verifyJWT, (req, res) => {
-
-    let { username, bio, social_links } = req.body;
-
-    let bioLimit = 150;
-
-    if(username.length < 3){
-        return res.status(403).json({ error: "Username should be at least 3 letters long" });
-    }
-
-    if(bio.length > bioLimit){
-        return res.status(403).json({ error: `Bio should not be more than ${bioLimit} characters` });
-    }
-
-    let socialLinksArr = Object.keys(social_links);
-
-    try {
-
-        for(let i = 0; i < socialLinksArr.length; i++){
-            if(social_links[socialLinksArr[i]].length){
-                let hostname = new URL(social_links[socialLinksArr[i]]).hostname; 
-
-                if(!hostname.includes(`${socialLinksArr[i]}.com`) && socialLinksArr[i] != 'website'){
-                    return res.status(403).json({ error: `${socialLinksArr[i]} link is invalid. You must enter a full link` })
-                }
-
-            }
-        }
-
-    } catch (err) {
-        return res.status(500).json({ error: "You must provide full social links with http(s) included" })
-    }
-
-    let updateObj = {
-        "personal_info.username": username,
-        "personal_info.bio": bio,
-        social_links
-    }
-
-    User.findOneAndUpdate({ _id: req.user }, updateObj, {
-        runValidators: true
-    })
-    .then(() => {
-        return res.status(200).json({ status: "User updated successfully" })
-    })
-    .catch(err => {
-        if(err.code == 11000){
-            return res.status(409).json({ error: "username is already taken" })
-        }
-        return res.status(500).json({ error: err.message })
-    })
-
-})
-
-server.delete("/delete-user", verifyJWT, (req, res) => {
-    const userId = req.user;
-
-    User.findOneAndDelete({ _id: userId })
-        .then((deletedUser) => {
+    User.findByIdAndDelete(req.params.id)
+        .then(deletedUser => {
             if (!deletedUser) {
                 console.log("user not found")
                 return res.status(404).json({ error: "User not found" });
             }
             console.log("user deleted successfully")
-            return res.status(200).json({ message: "User deleted successfully" });
+            res.status(200).json({ message: "User deleted successfully" });
         })
         .catch(err => {
-            console.error(err);
-            return res.status(500).json({ error: "Error deleting user" });
+            console.log(err)
+            res.status(500).json({ error: "Error deleting user" });
         });
 });
 
