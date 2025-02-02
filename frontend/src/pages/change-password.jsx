@@ -20,19 +20,19 @@ const ChangePassword = () => {
         e.preventDefault();
 
         let form = new FormData(changePasswordForm.current);
-        let formData = { };
+        let formData = {};
 
-        for(let [key, value] of form.entries()){
+        for (let [key, value] of form.entries()) {
             formData[key] = value
         }
 
         let { currentPassword, newPassword } = formData;
 
-        if (!currentPassword.length || !newPassword.length){
+        if (!currentPassword.length || !newPassword.length) {
             return toast.error("Please fill in all the inputs")
         }
 
-        if(!passwordRegex.test(currentPassword) || !passwordRegex.test(newPassword)){
+        if (!passwordRegex.test(currentPassword) || !passwordRegex.test(newPassword)) {
             return toast.error("Password should be 6 to 20 characters long with at least 1 number, 1 lowercase and 1 uppercase letter")
         }
 
@@ -45,16 +45,16 @@ const ChangePassword = () => {
                 'Authorization': `Bearer ${access_token}`
             }
         })
-        .then(() => {
-            toast.dismiss(loadingToast);
-            e.target.removeAttribute("disabled");
-            return toast.success("Password Updated")
-        })
-        .catch(({ response }) => {
-            toast.dismiss(loadingToast);
-            e.target.removeAttribute("disabled");
-            return toast.error(response.data.error)
-        })
+            .then(() => {
+                toast.dismiss(loadingToast);
+                e.target.removeAttribute("disabled");
+                return toast.success("Password Updated")
+            })
+            .catch(({ response }) => {
+                toast.dismiss(loadingToast);
+                e.target.removeAttribute("disabled");
+                return toast.error(response.data.error)
+            })
 
 
     }

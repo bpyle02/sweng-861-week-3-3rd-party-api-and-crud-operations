@@ -10,7 +10,7 @@ import { filterPaginationData } from "../common/filter-pagination-data";
 const HomePage = () => {
     let [posts, setPost] = useState(null);
     let [trendingPosts, setTrendingPost] = useState(null);
-    let [ pageState, setPageState ] = useState("home");
+    let [pageState, setPageState] = useState("home");
 
     let categories = [
         "apologetics",
@@ -23,7 +23,7 @@ const HomePage = () => {
     const fetchLatestPosts = ({ page = 1 }) => {
         axios
             .post(import.meta.env.VITE_SERVER_DOMAIN + "/latest-posts", { page })
-            .then( async ({ data }) => {
+            .then(async ({ data }) => {
 
                 let formatedData = await filterPaginationData({
                     state: posts,
@@ -42,8 +42,8 @@ const HomePage = () => {
     const fetchPostsByCategory = ({ page = 1 }) => {
         axios
             .post(import.meta.env.VITE_SERVER_DOMAIN + "/search-posts", { tag: pageState, page })
-            .then( async ({ data }) => {
-                
+            .then(async ({ data }) => {
+
                 let formatedData = await filterPaginationData({
                     state: posts,
                     data: data.posts,
@@ -71,12 +71,12 @@ const HomePage = () => {
     };
 
     const loadPostByCategory = (e) => {
-        
-        let category = e.target.innerText.toLowerCase(); 
+
+        let category = e.target.innerText.toLowerCase();
 
         setPost(null);
 
-        if(pageState == category){
+        if (pageState == category) {
             setPageState("home");
             return;
         }
@@ -89,13 +89,13 @@ const HomePage = () => {
 
         activeTabRef.current.click();
 
-        if(pageState == "home"){
+        if (pageState == "home") {
             fetchLatestPosts({ page: 1 });
         } else {
             fetchPostsByCategory({ page: 1 })
         }
 
-        if(!trendingPosts){
+        if (!trendingPosts) {
             fetchTrendingPosts();
         }
 
@@ -107,22 +107,22 @@ const HomePage = () => {
                 {/* latest posts */}
                 <div className="w-full">
                     <InPageNavigation
-                        routes={[ pageState , "trending posts"]}
+                        routes={[pageState, "trending posts"]}
                         defaultHidden={["trending posts"]}
                     >
                         <>
                             {posts == null ? (
                                 <Loader />
                             ) : (
-                                posts.results.length ? 
+                                posts.results.length ?
                                     posts.results.map((post, i) => {
                                         return (
                                             <>
-                                            
+
                                             </>
                                         );
                                     })
-                                : <NoDataMessage message="No posts published" />
+                                    : <NoDataMessage message="No posts published" />
                             )}
                         </>
 
@@ -136,7 +136,7 @@ const HomePage = () => {
                                         </>
                                     );
                                 })
-                            : <NoDataMessage message="No trending posts" />
+                                : <NoDataMessage message="No trending posts" />
                         )}
                     </InPageNavigation>
                 </div>
@@ -152,8 +152,8 @@ const HomePage = () => {
                             <div className="flex gap-3 flex-wrap">
                                 {categories.map((category, i) => {
                                     return (
-                                        <button onClick={loadPostByCategory} className={"tag " + (pageState == category ? " bg-black text-white " : " ")} 
-                                        key={i}>
+                                        <button onClick={loadPostByCategory} className={"tag " + (pageState == category ? " bg-black text-white " : " ")}
+                                            key={i}>
                                             {category}
                                         </button>
                                     );
@@ -170,14 +170,14 @@ const HomePage = () => {
                             {trendingPosts == null ? (
                                 <Loader />
                             ) : (
-                                trendingPosts.length ? 
+                                trendingPosts.length ?
                                     trendingPosts.map((post, i) => {
                                         return (
                                             <>
                                             </>
                                         );
                                     })
-                                : <NoDataMessage message="No trending posts" />
+                                    : <NoDataMessage message="No trending posts" />
                             )}
                         </div>
                     </div>

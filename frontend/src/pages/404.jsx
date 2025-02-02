@@ -15,7 +15,7 @@ const PageNotFound = () => {
             <p className="text-dark-grey text-xl leading-7 -mt-8">The page you are looking for does not exist. Head back to the <Link to="/" className="text-black underline">home page</Link></p>
 
             <div className="mt-auto">
-                <img src={ theme == "light" ? darkFullLogo : lightFullLogo } className="h-8 object-contain block mx-auto select-none" />
+                <img src={theme == "light" ? darkFullLogo : lightFullLogo} className="h-8 object-contain block mx-auto select-none" />
                 <p className="mt-5 text-dark-grey">Proclaiming Christ is King by providing relevant apologetic and Biblical content to all.</p>
             </div>
 

@@ -21,12 +21,12 @@ export const authWithGoogle = async () => {
     let user = null;
 
     await signInWithPopup(google_auth, google_provider)
-    .then((result) => {
-        user = result.user
-    })
-    .catch((err) => {
-        console.log(err)
-    })
+        .then((result) => {
+            user = result.user
+        })
+        .catch((err) => {
+            console.log(err)
+        })
 
     return user;
 }
@@ -40,12 +40,12 @@ export const authWithFacebook = async () => {
     let user = null;
 
     await signInWithPopup(facebook_auth, facebook_provider)
-    .then((result) => {
-        user = result.user
-    })
-    .catch((err) => {
-        console.log(err)
-    })
+        .then((result) => {
+            user = result.user
+        })
+        .catch((err) => {
+            console.log(err)
+        })
 
     return user;
 }

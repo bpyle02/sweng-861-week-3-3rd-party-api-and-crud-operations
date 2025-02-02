@@ -21,7 +21,7 @@ const App = () => {
 
     const [userAuth, setUserAuth] = useState({});
 
-    const [ theme, setTheme ] = useState(() => darkThemePreference() ? "dark" : "light" );
+    const [theme, setTheme] = useState(() => darkThemePreference() ? "dark" : "light");
 
     useEffect(() => {
 
@@ -29,14 +29,14 @@ const App = () => {
         let themeInSession = sessionStorage.getItem("theme");
 
         userInSession ? setUserAuth(JSON.parse(userInSession)) : setUserAuth({ access_token: null })
-        
+
         if (themeInSession) {
             setTheme(() => {
 
                 document.body.setAttribute('data-theme', themeInSession);
 
                 return themeInSession;
-            
+
             })
         } else {
             document.body.setAttribute('data-theme', theme)
@@ -47,21 +47,21 @@ const App = () => {
 
     return (
         <ThemeContext.Provider value={{ theme, setTheme }}>
-            <UserContext.Provider value={{userAuth, setUserAuth}}>
+            <UserContext.Provider value={{ userAuth, setUserAuth }}>
                 <Routes>
-                    <Route path="/" element={<Navbar />}> 
+                    <Route path="/" element={<Navbar />}>
                         <Route index element={<HomePage />} />
-                        <Route path="dashboard" element={<SideNav />} /> 
+                        <Route path="dashboard" element={<SideNav />} />
                         <Route path="settings" element={<SideNav />}>
                             <Route path="edit-profile" element={<EditProfile />} />
                             <Route path="change-password" element={<ChangePassword />} />
-                        </Route>  
+                        </Route>
                         <Route path="signin" element={<UserAuthForm type="sign-in" />} />
                         <Route path="signup" element={<UserAuthForm type="sign-up" />} />
                         <Route path="user/:id" element={<ProfilePage />} />
                         <Route path="privacy-policy" element={<PrivacyPolicy />} />
                         <Route path="data-deletion" element={<DataDeletion />} />
-                        <Route path="*" element={<PageNotFound />} /> 
+                        <Route path="*" element={<PageNotFound />} />
                     </Route>
                 </Routes>
             </UserContext.Provider>

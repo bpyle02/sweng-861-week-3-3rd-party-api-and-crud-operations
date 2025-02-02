@@ -17,14 +17,14 @@ const UserAuthForm = ({ type }) => {
     const userAuthThroughServer = (serverRoute, formData) => {
 
         axios.post(import.meta.env.VITE_SERVER_DOMAIN + serverRoute, formData)
-        .then(({ data }) => {
-            sessionStorage.setItem("user", JSON.stringify(data))
-            
-            setUserAuth(data)
-        })
-        .catch(({ response }) => {
-            toast.error(response.data.error)
-        })
+            .then(({ data }) => {
+                sessionStorage.setItem("user", JSON.stringify(data))
+
+                setUserAuth(data)
+            })
+            .catch(({ response }) => {
+                toast.error(response.data.error)
+            })
 
     }
 
@@ -40,28 +40,28 @@ const UserAuthForm = ({ type }) => {
         let form = new FormData(formElement);
         let formData = {};
 
-        for(let [key, value] of form.entries()){
+        for (let [key, value] of form.entries()) {
             formData[key] = value;
         }
 
         let { fullname, email, password } = formData;
 
-        if(fullname){
-            if(fullname.length < 3){
+        if (fullname) {
+            if (fullname.length < 3) {
                 return toast.error("Name must be at least 3 characters long")
-           }
+            }
         }
-       if(!email.length){
-            return toast.error("Enter Email" )
-       }
-       if(!emailRegex.test(email)){
-            return toast.error("Email is invalid" )
-       }
-       if(!passwordRegex.test(password)){
+        if (!email.length) {
+            return toast.error("Enter Email")
+        }
+        if (!emailRegex.test(email)) {
+            return toast.error("Email is invalid")
+        }
+        if (!passwordRegex.test(password)) {
             return toast.error("Password should be 6 to 20 characters long with at least 1 number, 1 lowercase and 1 uppercase letter")
-       }
+        }
 
-       userAuthThroughServer(serverRoute, formData)
+        userAuthThroughServer(serverRoute, formData)
 
     }
 
@@ -70,7 +70,7 @@ const UserAuthForm = ({ type }) => {
         e.preventDefault();
 
         authWithGoogle().then(user => {
-            
+
             let serverRoute = "/google-auth";
 
             let formData = {
@@ -80,10 +80,10 @@ const UserAuthForm = ({ type }) => {
             userAuthThroughServer(serverRoute, formData)
 
         })
-        .catch(err => {
-            toast.error('Trouble logging in through Google');
-            return console.log(err)
-        })
+            .catch(err => {
+                toast.error('Trouble logging in through Google');
+                return console.log(err)
+            })
 
     }
 
@@ -92,7 +92,7 @@ const UserAuthForm = ({ type }) => {
         e.preventDefault();
 
         authWithFacebook().then(user => {
-            
+
             let serverRoute = "/facebook-auth";
 
             let formData = {
@@ -102,96 +102,96 @@ const UserAuthForm = ({ type }) => {
             userAuthThroughServer(serverRoute, formData)
 
         })
-        .catch(err => {
-            toast.error('Trouble logging in through Facebook');
-            return console.log(err)
-        })
+            .catch(err => {
+                toast.error('Trouble logging in through Facebook');
+                return console.log(err)
+            })
 
     }
 
     return (
         access_token ?
-        <Navigate to="/" />
-        :
-        <AnimationWrapper keyValue={type}>
-            <section className="h-cover flex items-center justify-center">
-                <Toaster />
-                <form id="formElement" className="w-[80%] max-w-[400px]">
-                    <h1 className="text-4xl font-gelasio capitalize text-center mb-24">
-                        {type == "sign-in" ? "Welcome back" : "Join today" }
-                    </h1>
+            <Navigate to="/" />
+            :
+            <AnimationWrapper keyValue={type}>
+                <section className="h-cover flex items-center justify-center">
+                    <Toaster />
+                    <form id="formElement" className="w-[80%] max-w-[400px]">
+                        <h1 className="text-4xl font-gelasio capitalize text-center mb-24">
+                            {type == "sign-in" ? "Welcome back" : "Join today"}
+                        </h1>
 
-                    {
-                        type != "sign-in" ?
+                        {
+                            type != "sign-in" ?
+                                <InputBox
+                                    name="fullname"
+                                    type="text"
+                                    placeholder="Full Name"
+                                    icon="fi-rr-user"
+                                />
+                                : ""
+                        }
+
                         <InputBox
-                            name="fullname"
-                            type="text"
-                            placeholder="Full Name"
-                            icon="fi-rr-user"
+                            name="email"
+                            type="email"
+                            placeholder="Email"
+                            icon="fi-rr-envelope"
                         />
-                        : ""
-                    }
 
-                    <InputBox
-                        name="email"
-                        type="email"
-                        placeholder="Email"
-                        icon="fi-rr-envelope"
-                    />
+                        <InputBox
+                            name="password"
+                            type="password"
+                            placeholder="Password"
+                            icon="fi-rr-key"
+                        />
 
-                    <InputBox
-                        name="password"
-                        type="password"
-                        placeholder="Password"
-                        icon="fi-rr-key"
-                    />
+                        <button
+                            className="btn-dark center mt-14"
+                            type="submit"
+                            onClick={handleSubmit}
+                        >
+                            {type.replace("-", " ")}
+                        </button>
 
-                    <button
-                        className="btn-dark center mt-14"
-                        type="submit"
-                        onClick={handleSubmit}
-                    >   
-                        { type.replace("-", " ") }
-                    </button>
+                        <div className="relative w-full flex items-center gap-2 my-10 opacity-10 uppercase text-black font-bold">
+                            <hr className="w-1/2 border-black" />
+                            <p>or</p>
+                            <hr className="w-1/2 border-black" />
+                        </div>
 
-                    <div className="relative w-full flex items-center gap-2 my-10 opacity-10 uppercase text-black font-bold">
-                        <hr className="w-1/2 border-black" />
-                        <p>or</p>
-                        <hr className="w-1/2 border-black" />
-                    </div>
+                        <button className="btn-dark flex items-center justify-center gap-4 w-[90%] center" onClick={handleGoogleAuth} >
+                            <img src={googleIcon} className="w-5" />
+                            continue with google
+                        </button>
 
-                    <button className="btn-dark flex items-center justify-center gap-4 w-[90%] center" onClick={handleGoogleAuth} >
-                        <img src={googleIcon} className="w-5" />
-                        continue with google
-                    </button>
+                        <button className="btn-dark flex items-center justify-center gap-4 w-[90%] center mt-2" onClick={handleFacebookAuth}>
+                            <img src={facebookIcon} className="w-5" />
+                            continue with facebook
+                        </button>
 
-                    <button className="btn-dark flex items-center justify-center gap-4 w-[90%] center mt-2" onClick={handleFacebookAuth}>
-                        <img src={facebookIcon} className="w-5" />
-                        continue with facebook
-                    </button>
+                        {
 
-                    {
+                            type == "sign-in" ?
+                                <p className="mt-6 text-dark-grey text-xl text-center">
+                                    Don't have an account?
+                                    <Link to="/signup" className="underline text-black text-xl ml-1" >
+                                        Create one now
+                                    </Link>
+                                </p>
+                                :
+                                <p className="mt-6 text-dark-grey text-xl text-center">
+                                    Already have an account?
+                                    <Link to="/signin" className="underline text-black text-xl ml-1" >
+                                        Sign in here
+                                    </Link>
+                                </p>
 
-                        type == "sign-in" ?
-                        <p className="mt-6 text-dark-grey text-xl text-center">
-                        Don't have an account?
-                        <Link to="/signup" className="underline text-black text-xl ml-1" >
-                            Create one now
-                        </Link>  
-                        </p>
-                        :
-                        <p className="mt-6 text-dark-grey text-xl text-center">
-                        Already have an account?
-                        <Link to="/signin" className="underline text-black text-xl ml-1" >
-                            Sign in here
-                        </Link>  
-                        </p>
+                        }
 
-                    }
-
-                </form>
-            </section>
-        </AnimationWrapper>
+                    </form>
+                </section>
+            </AnimationWrapper>
     )
 }
 
