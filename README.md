@@ -10,13 +10,13 @@
 - To run this web app locally, clone the repository and run `npm i` in the frontend and backend folders
 - After the frontend and backend are initialized, you can start up the backend by typing `npm start` in the terminal and the frontend by executing the `npm run dev` command
 - You will then be able to access the website from [http://localhost:5173](http://localhost:5173). Right now, the website only has functionality to sign in, sign out, and edit your profile, but if you would like to see the fully built application, you can check out [https://christisking.info](https://christisking.info)
-- You can also view the API documentation, built with Swagger UI, [http://localhost:3173/api-docs](here)
+- You can also view the API documentation, built with Swagger UI, [http://localhost:3173/api-docs](http://localhost:3173/api-docs)
 
 # 3rd Party API Implementation
 
-- For the first requirement of using a 3rd party API, I decided to use [https://ui-avatars.com](UI-Avatars). This is a super simple and easy API library that allows new users, when the sign up on my website, to receive an auto-generated profile image with their initials on it and a random background color.
+- For the first requirement of using a 3rd party API, I decided to use [UI-Avatars](https://ui-avatars.com). This is a super simple and easy API library that allows new users, when the sign up on my website, to receive an auto-generated profile image with their initials on it and a random background color.
 - The implementation of this application is very simple. In fact, it only requires one line of code inside the `server.post("/users")` route of the `server.js` file:
-```
+```javascript
     let profile_img = "https://ui-avatars.com/api/?name=" + fullname.replace(" ", "+") + "&background=random&size=384";
 ```
 - In my application, the Users schema stores only the URL of the profile image. That makes this API super useful, because they provide a dead-simple approach to get a profile image based on the user's `fullname`. All I have to do is replace the spaces with '+' signs and boom, a custom profile image!
@@ -37,7 +37,7 @@
     - `server.delete("/users/:id")` -- This api route is used to delete the user 
 - In order to provide a simple way to access full API documentation, I used a tool called Swagger UI, which can be accessed by running the application and navigating to [http://localhost:3173](http://localhost:3173/api-docs).
   - To implement Swagger UI on the server side, I used the code below
-```
+```javascript
     import swaggerUi from 'swagger-ui-express';
 
     const options = {
@@ -61,7 +61,7 @@
     server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 ```
   - Swagger UI uses the `book.js` file found in `/backend/routes/book.js` to define the API routes and documentation. Here is an example of one route defined in this file:
-```
+```javascript
     /**
     * @swagger
     * /users:
@@ -113,7 +113,7 @@
 - Authorization Protection
   - In order to make sure only authorized users can access or modify data, only users with a valid authorization token can use the APIs
   - For example, the following axios `put` command to modify user data must have an `Authorization` header value. If there is no valid access token, then an error will be thrown and the user will not be able to modify any data. This is true for all API routes.
-```
+```javascript
     axios.put(
         import.meta.env.VITE_SERVER_DOMAIN + "/users/" + jwt_data.id,
         updateData, {
@@ -128,7 +128,7 @@
     - 100 requests per IP per 15 minutes -- this is the standard rate limit used for get requests like getting user data or editing user data
     - 5 requests per 30 minutes -- this is the standard rate limit used for user creation and deletion
   - The code to implement this is fairly straightforward and can be seen in full in the `server.js` file:
-```
+```javascript
     import rateLimit from 'express-rate-limit';
 
     const server = express();
