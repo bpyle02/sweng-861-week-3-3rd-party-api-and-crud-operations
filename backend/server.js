@@ -52,11 +52,11 @@ const edit_account_limiter = rateLimit({
 });
 const new_account_limiter = rateLimit({
     windowMs: 30 * 60 * 1000, // 30 minutes
-    max: 5 // limit each IP to 5 requests per windowMs
+    max: 100 // limit each IP to 5 requests per windowMs
 });
 const delete_account_limiter = rateLimit({
     windowMs: 30 * 60 * 1000, // 30 minutes
-    max: 5 // limit each IP to 5 requests per windowMs
+    max: 100 // limit each IP to 5 requests per windowMs
 });
 
 server.use(express.json());

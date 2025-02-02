@@ -111,7 +111,7 @@
 
 # API Security
 - Authorization Protection
-  - In order to make sure only authorized users can access or modify data, only users with a valid authorization token can use the APIs
+  - In order to make sure only authorized users can access or modify data, only users with a valid authorization token (created using JSON Web Token (JWT)) can use the APIs
   - For example, the following axios `put` command to modify user data must have an `Authorization` header value. If there is no valid access token, then an error will be thrown and the user will not be able to modify any data. This is true for all API routes.
 ```javascript
     axios.put(
@@ -125,8 +125,8 @@
 - Rate Limiting
   - In addition to implementing API security measures, I have also implemented rate limiting to prevent malicious attackers from scraping data. This prevents people from abusing the APIs.
   - There are currently 2 different rate limits depending on the API route:
-    - 100 requests per IP per 15 minutes -- this is the standard rate limit used for get requests like getting user data or editing user data
-    - 5 requests per 30 minutes -- this is the standard rate limit used for user creation and deletion
+    - 100 requests per IP per 10 minutes -- this is the standard rate limit used for get requests like getting user data or editing user data
+    - 100 requests per 30 minutes -- this is the standard rate limit used for user creation and deletion
   - The code to implement this is fairly straightforward and can be seen in full in the `server.js` file:
 ```javascript
     import rateLimit from 'express-rate-limit';
@@ -134,20 +134,20 @@
     const server = express();
 
     const standard_limiter = rateLimit({
-        windowMs: 15 * 60 * 1000, // 1000ms in a second * 60 seconds in a minute * 15 = 15 minutes in milliseconds
+        windowMs: 10 * 60 * 1000, // 1000ms in a second * 60 seconds in a minute * 10 = 10 minutes in milliseconds
         max: 100 // limit each IP to 100 requests per windowMs
     });
     const edit_account_limiter = rateLimit({
-        windowMs: 15 * 60 * 1000, // 15 minutes
+        windowMs: 10 * 60 * 1000, // 10 minutes
         max: 100 // limit each IP to 100 requests per windowMs
     });
     const new_account_limiter = rateLimit({
         windowMs: 30 * 60 * 1000, // 30 minutes
-        max: 5 // limit each IP to 5 requests per windowMs
+        max: 100 // limit each IP to 5 requests per windowMs
     });
     const delete_account_limiter = rateLimit({
         windowMs: 30 * 60 * 1000, // 30 minutes
-        max: 5 // limit each IP to 5 requests per windowMs
+        max: 100 // limit each IP to 5 requests per windowMs
     });
 
     server.use(standard_limiter);
