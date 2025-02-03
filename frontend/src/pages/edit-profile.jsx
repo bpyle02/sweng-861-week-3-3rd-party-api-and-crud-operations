@@ -25,7 +25,7 @@ const EditProfile = () => {
     const [charactersLeft, setCharctersLeft] = useState(bioLimit);
     const [updatedProfileImg, setUpdatedProfileImg] = useState(null);
 
-    const profileData = profile ? profile : profileDataStructure; // Default structure if profile is null
+    const profileData = profile ? profile : profileDataStructure;
     let { personal_info: { fullname, username: profile_username, profile_img, email, bio }, social_links } = profileData;
 
     const jwt_data = jwtDecode(access_token);
@@ -123,7 +123,7 @@ const EditProfile = () => {
         }
 
         const updateData = {
-            username: formData.username, // Explicitly use formData.username
+            username: formData.username,
             bio: formData.bio,
             social_links: {
                 youtube: formData.youtube,
@@ -147,33 +147,33 @@ const EditProfile = () => {
                 'Authorization': `Bearer ${access_token}`
             }
         })
-            .then(({ data }) => {
-                console.log("Server response:", data.updatedUser);
+        .then(({ data }) => {
+            console.log("Server response:", data.updatedUser);
 
-                let new_data = data.updatedUser
+            let new_data = data.updatedUser
 
-                if (userAuth.username !== data.username) {
-                    let newUserAuth = {
-                        ...userAuth,
-                        username: new_data.personal_info.username,
-                        // bio: new_data.personal_info.bio,
-                        // social_links: new_data.personal_info.social_links
-                    };
-                    sessionStorage.setItem("user", JSON.stringify(newUserAuth));
-                    setUserAuth(newUserAuth);
-                }
+            if (userAuth.username !== data.username) {
+                let newUserAuth = {
+                    ...userAuth,
+                    username: new_data.personal_info.username,
+                    // bio: new_data.personal_info.bio,
+                    // social_links: new_data.personal_info.social_links
+                };
+                sessionStorage.setItem("user", JSON.stringify(newUserAuth));
+                setUserAuth(newUserAuth);
+            }
 
-                toast.dismiss(loadingToast);
-                e.target.removeAttribute("disabled");
-                toast.success("Profile Updated")
+            toast.dismiss(loadingToast);
+            e.target.removeAttribute("disabled");
+            toast.success("Profile Updated")
 
-            })
-            .catch((error) => {
-                console.error("Update error:", error);
-                toast.dismiss(loadingToast);
-                e.target.removeAttribute("disabled");
-                toast.error(error.response?.data?.error || "Failed to update profile");
-            });
+        })
+        .catch((error) => {
+            console.error("Update error:", error);
+            toast.dismiss(loadingToast);
+            e.target.removeAttribute("disabled");
+            toast.error(error.response?.data?.error || "Failed to update profile");
+        });
 
     }
 

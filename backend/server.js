@@ -19,8 +19,8 @@ admin.initializeApp({
     credential: admin.credential.cert(serviceAccountKey)
 })
 
-let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/; // regex for email
-let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/; // regex for password
+let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
 let PORT = 3173;
 
 const options = {
@@ -132,7 +132,6 @@ server.post("/users", new_account_limiter, async (req, res) => {
     let { fullname, email, password } = req.body;
     let isAdmin = process.env.ADMIN_EMAILS.split(",").includes(email);
 
-    // validating the data from frontend
     if (fullname.length < 3) {
         return res.status(403).json({ "error": "Fullname must be at least 3 letters long" })
     }
@@ -373,6 +372,7 @@ server.put("/users/:id", verifyJWT, edit_account_limiter, (req, res) => {
         });
 });
 
+// Update User Password
 server.post("/users/:id", verifyJWT, edit_account_limiter, (req, res) => {
 
     let { currentPassword, newPassword } = req.body;
